@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Order;
+use Illuminate\Support\Carbon;
+
+class BookingCalendarController extends Controller
+{
+    public function calendar()
+{
+    return view('calendar');
+}
+public function calendarEvents()
+{
+    $orders = Order::with('customer')
+        ->whereNotIn('status', ['pending approval', 'completed','processed']) // 🔥 FILTER
+        ->get();
+
+    $events = [];
+
+    foreach ($orders as $order) {
+
+        $start = Carbon::parse($order->date);
+        $end   = $order->return_date 
+                    ? Carbon::parse($order->return_date)
+                    : $start;
+
+        // =========================
+        // 📦 MAIN EVENT (SEWA)
+        // =========================
+        $events[] = [
+            'title' => '#' . $order->id . ' ' . $order->event,
+            'start' => $start->toDateString(),
+            'end'   => $end->toDateString(),
+            'allDay'=> true, // 🔥 WAJIB
+            'id'    => $order->id,
+            'color' => '#d51500'
+        ];
+
+        // =========================
+        // 🚚 PICKUP (H-1)
+        // =========================
+        // Pickup
+        $events[] = [
+            'title' => 'Pickup #' . $order->id,
+            'start' => $start->copy()->subDay()->toDateString(),
+            'allDay'=> true,
+            'id'    => $order->id,
+            'color' => '#E69F00'
+        ];
+
+        // Return
+        $events[] = [
+            'title' => 'Return #' . $order->id,
+            'start' => $end->toDateString(), // 🔥 BUKAN addDay()
+            'allDay'=> true,
+            'id'    => $order->id,
+            'color' => '#0072B2'
+        ];
+    }
+
+    return response()->json($events);
+}
+}
