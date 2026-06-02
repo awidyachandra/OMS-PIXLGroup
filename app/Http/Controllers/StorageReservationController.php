@@ -411,8 +411,13 @@ class StorageReservationController extends Controller
     =====================================
     */
 
-    $returnPhotoPath = $request->file('return_photo')
-        ->store('proofs/return', 'public');
+    $file = $request->file('return_photo');
+
+$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+$file->move(public_path('proofs/return'), $filename);
+
+$returnPhotoPath = 'proofs/return/' . $filename;
 
     $order->update([
         'status' => 'return checking',
@@ -454,9 +459,13 @@ class StorageReservationController extends Controller
     =====================================
     */
 
-    $pickupPhotoPath = $request->file('pickup_photo')
-        ->store('proofs/pickup', 'public');
+    $file = $request->file('pickup_photo');
 
+$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+$file->move(public_path('proofs/pickup'), $filename);
+
+$pickupPhotoPath = 'proofs/pickup/' . $filename;
     foreach ($order->details as $detail) {
         Unit::where('kode_unit', $detail->kode_unit)
             ->update(['status' => 'rented']);
