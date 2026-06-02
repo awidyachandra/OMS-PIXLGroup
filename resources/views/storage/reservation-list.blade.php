@@ -167,8 +167,8 @@
                 @if(in_array($status, ['on rent', 'completed']))
                     <td>
                         @if($order->pickup_photo)
-                            <a href="{{ asset($order->pickup_photo)}}" target="_blank">
-                                <img src="{{asset($order->pickup_photo) }}"
+                            <a href="{{ asset('public/' . $order->pickup_photo)}}" target="_blank">
+                                <img src="{{asset('public/' . $order->pickup_photo) }}"
                                      class="proof-img"
                                      alt="Bukti Pickup">
                             </a>
@@ -186,8 +186,8 @@
                 @if($status == 'completed')
                     <td>
                         @if($order->return_photo)
-                            <a href="{{ asset($order->return_photo) }}" target="_blank">
-                                <img src="{{ asset($order->return_photo) }}"
+                            <a href="{{ asset('public/' . $order->return_photo) }}" target="_blank">
+                                <img src="{{ asset('public/' . $order->return_photo) }}"
                                      class="proof-img"
                                      alt="Bukti Return">
                             </a>
