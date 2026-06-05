@@ -247,13 +247,6 @@ class AvailabilityController extends Controller
         $returnDate = Carbon::parse($request->return_date)->toDateString();
         $productType = $request->product_type;
 
-        /*
-        =========================================
-        TOTAL STOCK UTAMA SAJA
-        Backup unit tidak dihitung availability normal
-        =========================================
-        */
-
         $totalStock = Unit::where('kategori', $productType)
             ->where('is_backup', 0)
             ->count();

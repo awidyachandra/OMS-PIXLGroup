@@ -6,18 +6,12 @@ use App\Models\Order;
 use App\Models\Unit;
 use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function dbstorage()
     {
-        /*
-        =========================================
-        STOK UTAMA SAJA
-        Backup unit tidak dihitung di dashboard utama
-        =========================================
-        */
-
         $totalUnits = Unit::where('is_backup', 0)->count();
 
         $available = Unit::where('is_backup', 0)
@@ -91,15 +85,8 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function dbmarketing()
+    public function dbmarketing(Request $request)
     {
-        /*
-        =========================================
-        STOK UTAMA SAJA
-        Backup unit tidak dihitung di dashboard utama
-        =========================================
-        */
-
         $totalUnits = Unit::where('is_backup', 0)->count();
 
         $available = Unit::where('is_backup', 0)
@@ -129,16 +116,39 @@ class DashboardController extends Controller
             ->orderBy('kategori')
             ->get();
 
-        // =========================
-        // ORDER PIPELINE
-        // =========================
         $totalOrders = Order::count();
+        $trendYear = $request->get('year', now()->year);
+$trendMonth = $request->get('month');
+
+$query = Order::query()
+    ->whereNotNull('date')
+    ->whereYear('date', $trendYear);
+
+if (!empty($trendMonth)) {
+    $query->whereMonth('date', $trendMonth);
+}
+
+$monthlyOrders = $query
+    ->selectRaw('MONTH(date) as month, COUNT(*) as total')
+    ->groupByRaw('MONTH(date)')
+    ->pluck('total', 'month')
+    ->toArray();
+
+$orderTrend = [];
+
+for ($i = 1; $i <= 12; $i++) {
+    $orderTrend[] = $monthlyOrders[$i] ?? 0;
+}
+
+$availableYears = Order::whereNotNull('date')
+    ->selectRaw('YEAR(date) as year')
+    ->distinct()
+    ->orderByDesc('year')
+    ->pluck('year');
 
         $pendingApproval = Order::where('status', 'pending approval')->count();
-        $dpPaid = Order::where('status', 'dp paid')->count();
         $processedOrders = Order::where('status', 'processed')->count();
         $assignedOrders = Order::where('status', 'assigned')->count();
-        $fullyPaid = Order::where('status', 'fully paid')->count();
         $onRentOrders = Order::where('status', 'on rent')->count();
         $returnCheckingOrders = Order::where('status', 'return checking')->count();
         $completed = Order::where('status', 'completed')->count();
@@ -146,10 +156,8 @@ class DashboardController extends Controller
 
         $pipelineData = [
             'pending_approval' => $pendingApproval,
-            'dp_paid' => $dpPaid,
             'processed' => $processedOrders,
             'assigned' => $assignedOrders,
-            'fully_paid' => $fullyPaid,
             'on_rent' => $onRentOrders,
             'return_checking' => $returnCheckingOrders,
             'completed' => $completed,
@@ -190,6 +198,9 @@ class DashboardController extends Controller
             'completed',
             'cancelledOrders',
             'pipelineData',
+            'availableYears',
+'trendYear',
+'trendMonth',
             'orderTrend'
         ))->with([
             'availableStock' => null,
@@ -201,21 +212,40 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function dbowner()
+    public function dbowner(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | ORDER SUMMARY
-        |--------------------------------------------------------------------------
-        */
-
         $totalOrders = Order::count();
+        $trendYear = $request->get('year', now()->year);
+$trendMonth = $request->get('month');
 
+$query = Order::query()
+    ->whereNotNull('date')
+    ->whereYear('date', $trendYear);
+
+if (!empty($trendMonth)) {
+    $query->whereMonth('date', $trendMonth);
+}
+
+$monthlyOrders = $query
+    ->selectRaw('MONTH(date) as month, COUNT(*) as total')
+    ->groupByRaw('MONTH(date)')
+    ->pluck('total', 'month')
+    ->toArray();
+
+$orderTrend = [];
+
+for ($i = 1; $i <= 12; $i++) {
+    $orderTrend[] = $monthlyOrders[$i] ?? 0;
+}
+
+$availableYears = Order::whereNotNull('date')
+    ->selectRaw('YEAR(date) as year')
+    ->distinct()
+    ->orderByDesc('year')
+    ->pluck('year');
         $pendingApproval = Order::where('status', 'pending approval')->count();
-        $dpPaid = Order::where('status', 'dp paid')->count();
         $processedOrders = Order::where('status', 'processed')->count();
         $assignedOrders = Order::where('status', 'assigned')->count();
-        $fullyPaid = Order::where('status', 'fully paid')->count();
         $onRentOrders = Order::where('status', 'on rent')->count();
         $returnCheckingOrders = Order::where('status', 'return checking')->count();
         $completed = Order::where('status', 'completed')->count();
@@ -223,42 +253,17 @@ class DashboardController extends Controller
 
         $pipelineData = [
             'pending_approval' => $pendingApproval,
-            'dp_paid' => $dpPaid,
             'processed' => $processedOrders,
             'assigned' => $assignedOrders,
-            'fully_paid' => $fullyPaid,
             'on_rent' => $onRentOrders,
             'return_checking' => $returnCheckingOrders,
             'completed' => $completed,
             'cancelled' => $cancelledOrders,
         ];
 
-        /*
-        |--------------------------------------------------------------------------
-        | ORDER TREND PER BULAN
-        |--------------------------------------------------------------------------
-        */
-
-        $monthlyOrders = Order::selectRaw('MONTH(date) as month, COUNT(*) as total')
-            ->whereNotNull('date')
-            ->whereYear('date', now()->year)
-            ->groupByRaw('MONTH(date)')
-            ->pluck('total', 'month')
-            ->toArray();
-
-        $orderTrend = [];
-
         for ($i = 1; $i <= 12; $i++) {
             $orderTrend[] = $monthlyOrders[$i] ?? 0;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | PIC ORDERS
-        |--------------------------------------------------------------------------
-        | PIC berasal dari orders.processed_by
-        |--------------------------------------------------------------------------
-        */
 
         $picOrders = Order::selectRaw('processed_by as pic, COUNT(*) as total_orders')
             ->whereNotNull('processed_by')
@@ -268,14 +273,6 @@ class DashboardController extends Controller
             ->get();
 
         $totalPic = $picOrders->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | UNIT SUMMARY
-        |--------------------------------------------------------------------------
-        | Backup unit tidak dihitung sebagai stok utama owner
-        |--------------------------------------------------------------------------
-        */
 
         $totalUnits = Unit::where('is_backup', 0)->count();
 
@@ -301,12 +298,6 @@ class DashboardController extends Controller
             ->groupBy('kategori')
             ->orderBy('kategori')
             ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | CUSTOMER SUMMARY
-        |--------------------------------------------------------------------------
-        */
 
         $totalCustomers = Customer::count();
 
@@ -352,7 +343,9 @@ class DashboardController extends Controller
             'cancelledOrders',
             'pipelineData',
             'orderTrend',
-
+'availableYears',
+'trendYear',
+'trendMonth',
             'picOrders',
             'totalPic',
 

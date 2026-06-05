@@ -9,11 +9,6 @@ use App\Helpers\LogHelper;
 
 class MarketingCustomerController extends Controller
 {
-    /*
-    ============================
-    HALAMAN CUSTOMER
-    ============================
-    */
 
     public function index(Request $request)
     {
@@ -31,12 +26,6 @@ class MarketingCustomerController extends Controller
 
         return view('marketing.customers', compact('customers'));
     }
-
-    /*
-    ============================
-    UPDATE CUSTOMER
-    ============================
-    */
 
     public function update(Request $request, $id)
     {

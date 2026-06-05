@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    // TAMPIL DATA
     public function index(Request $request)
     {
         if (!Auth::check()) {
@@ -29,13 +28,11 @@ class UserController extends Controller
         return view('owner.users', compact('users'));
     }
 
-    // FORM TAMBAH USER
     public function create()
     {
         return view('owner.users.create');
     }
 
-    // SIMPAN USER
     public function store(Request $request)
     {
         $request->validate([

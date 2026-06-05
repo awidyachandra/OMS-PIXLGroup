@@ -15,41 +15,35 @@ class AuthController extends Controller
     }
 
     public function login(Request $request)
-{
-    $credentials = $request->only('username', 'password');
-    
-    if (Auth::attempt($credentials)) {
-        $user = Auth::user();
-
-        // ❌ CEK STATUS (TAMBAHKAN DI SINI)
-        if ($user->status == 'inactive') {
-            Auth::logout();
-            return back()->with('error', 'Akun Anda nonaktif');
-        }
-        LogHelper::add('info', 'User login', 'User: ' . $user->username);
+    {
+        $credentials = $request->only('username', 'password');
         
-        // redirect berdasarkan role
-        switch ($user->role) {
-            case 'owner':
-                return redirect('/owner/dashboard');
-            case 'marketing':
-                return redirect('/marketing/dashboard');
-            case 'storage':
-                return redirect('/storage/dashboard');
-            case 'finance':
-    return redirect('finance/dashboard');
-
-case 'supervisor':
-    return redirect('/calendar');
-
-case 'creative and design':
-    return redirect('/calendar');
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            if ($user->status == 'inactive') {
+                Auth::logout();
+                return back()->with('error', 'Akun Anda nonaktif');
+            }
+            LogHelper::add('info', 'User login', 'User: ' . $user->username);
+            
+            // redirect berdasarkan role
+            switch ($user->role) {
+                case 'owner':
+                    return redirect('/owner/dashboard');
+                case 'marketing':
+                    return redirect('/marketing/dashboard');
+                case 'storage':
+                    return redirect('/storage/dashboard');
+                case 'finance':
+                    return redirect('finance/dashboard');
+                case 'supervisor':
+                    return redirect('/calendar');
+                case 'creative and design':
+                    return redirect('/calendar');
+            }
         }
+        return back()->with('error', 'Username atau password salah');
     }
-
-
-    return back()->with('error', 'Username atau password salah');
-}
     public function changePassword(Request $request)
     {
         $request->validate([
@@ -60,12 +54,10 @@ case 'creative and design':
         ]);
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        // cek password lama
         if (!Hash::check($request->old_password, $user->password)) {
             return back()->with('error', 'Password lama salah');
         }
 
-        // update password
         $user->update([
             'password' => Hash::make($request->new_password)
         ]);
@@ -75,7 +67,7 @@ case 'creative and design':
 
     public function logout()
 {
-    $user = Auth::user(); // ✅ ambil user dulu
+    $user = Auth::user(); 
 
     LogHelper::add(
         'info',

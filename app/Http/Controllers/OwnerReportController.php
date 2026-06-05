@@ -23,12 +23,6 @@ class OwnerReportController extends Controller
         $period = $request->period;
         $department = $request->department;
 
-        /*
-        =========================================
-        FILTER BULAN & TAHUN
-        =========================================
-        */
-
         if ($period) {
             $year = date('Y', strtotime($period));
             $month = date('m', strtotime($period));
@@ -36,12 +30,6 @@ class OwnerReportController extends Controller
             $year = date('Y');
             $month = date('m');
         }
-
-        /*
-        =========================================
-        QUERY
-        =========================================
-        */
 
         $query = WeeklyReport::where('month', $month)
             ->where('year', $year);

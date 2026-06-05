@@ -9,9 +9,7 @@ use App\Helpers\LogHelper;
 
 class UnitController extends Controller
 {
-    // ======================
-    // TAMPIL DATA
-    // ======================
+
     public function index(Request $request)
     {
         if (!Auth::check()) {
@@ -19,15 +17,6 @@ class UnitController extends Controller
         }
 
         $query = Unit::query();
-
-        /*
-        ======================
-        TAMPILKAN UNIT REGULER / BACKUP
-        ======================
-        Default: tampilkan unit reguler saja.
-        Jika klik "Lihat Backup Unit", tampilkan backup saja.
-        ======================
-        */
 
         if ($request->backup == '1') {
             $query->where('is_backup', 1);

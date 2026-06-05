@@ -570,11 +570,7 @@
                                 <span>Pending</span>
                             </div>
 
-                            <div class="legend-item">
-                                <span class="legend-dot" style="background:#ff8a83;"></span>
-                                <span>DP Paid</span>
-                            </div>
-
+                   
                             <div class="legend-item">
                                 <span class="legend-dot" style="background:#39bfd3;"></span>
                                 <span>Processed</span>
@@ -585,10 +581,7 @@
                                 <span>Assigned</span>
                             </div>
 
-                            <div class="legend-item">
-                                <span class="legend-dot" style="background:#5b8def;"></span>
-                                <span>Fully Paid</span>
-                            </div>
+            
 
                             <div class="legend-item">
                                 <span class="legend-dot" style="background:#20b486;"></span>
@@ -631,13 +624,6 @@
                                 </div>
                             </div>
 
-                            <div class="pipeline-stat stat-dp">
-                                <i class="bi bi-cash-coin"></i>
-                                <div>
-                                    <div class="pipeline-stat-title">DP Paid</div>
-                                    <div class="pipeline-stat-number">{{ $dpPaid }}</div>
-                                </div>
-                            </div>
 
                             <div class="pipeline-stat stat-processed">
                                 <i class="bi bi-gear"></i>
@@ -655,13 +641,6 @@
                                 </div>
                             </div>
 
-                            <div class="pipeline-stat stat-paid">
-                                <i class="bi bi-credit-card"></i>
-                                <div>
-                                    <div class="pipeline-stat-title">Fully Paid</div>
-                                    <div class="pipeline-stat-number">{{ $fullyPaid }}</div>
-                                </div>
-                            </div>
 
                             <div class="pipeline-stat stat-rent">
                                 <i class="bi bi-box-arrow-right"></i>
@@ -700,7 +679,45 @@
 
                 <div class="col-lg-7">
                     <div class="dashboard-card trend-card">
-                        <h4 class="card-title-purple">Order Trend</h4>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="card-title-purple mb-0">
+        Order Trend
+    </h4>
+
+    <form method="GET" class="d-flex gap-2">
+
+        <select name="year"
+            class="form-select form-select-sm"
+            onchange="this.form.submit()">
+
+            @foreach($availableYears as $year)
+                <option value="{{ $year }}"
+                    {{ $trendYear == $year ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
+            @endforeach
+
+        </select>
+
+        <select name="month"
+            class="form-select form-select-sm"
+            onchange="this.form.submit()">
+
+            <option value="">
+                All Month
+            </option>
+
+            @for($m=1;$m<=12;$m++)
+                <option value="{{ $m }}"
+                    {{ $trendMonth == $m ? 'selected' : '' }}>
+                    {{ date('F', mktime(0,0,0,$m,1)) }}
+                </option>
+            @endfor
+
+        </select>
+
+    </form>
+</div>
 
                         <div class="trend-chart-wrap">
                             <canvas id="orderTrendChart"></canvas>
@@ -753,30 +770,26 @@
                 new Chart(document.getElementById('pipelineChart'), {
                     type: 'doughnut',
                     data: {
-                        labels: [
-                            'Pending',
-                            'DP Paid',
-                            'Processed',
-                            'Assigned',
-                            'Fully Paid',
-                            'On Rent',
-                            'Return Check',
-                            'Completed',
-                            'Cancelled'
-                        ],
+                       labels: [
+    'Pending',
+    'Processed',
+    'Assigned',
+    'On Rent',
+    'Return Check',
+    'Completed',
+    'Cancelled'
+],
                         datasets: [{
                             data: pipelineData,
                             backgroundColor: [
-                                '#8b73ff',
-                                '#ff8a83',
-                                '#39bfd3',
-                                '#ffb04a',
-                                '#5b8def',
-                                '#20b486',
-                                '#b56cff',
-                                '#46c46f',
-                                '#9a9a9a'
-                            ],
+    '#8b73ff',
+    '#39bfd3',
+    '#ffb04a',
+    '#20b486',
+    '#b56cff',
+    '#46c46f',
+    '#9a9a9a'
+],
                             borderWidth: 0
                         }]
                     },

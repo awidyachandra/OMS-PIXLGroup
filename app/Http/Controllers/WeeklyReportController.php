@@ -9,12 +9,6 @@ use Illuminate\Support\Facades\Storage;
 
 class WeeklyReportController extends Controller
 {
-    /*
-    =========================================
-    HALAMAN WEEKLY REPORT
-    =========================================
-    */
-
     public function index(Request $request)
     {
         if (!Auth::check()) {
@@ -22,12 +16,6 @@ class WeeklyReportController extends Controller
         }
         $period = $request->period;
         $department = $request->department;
-
-        /*
-        =========================================
-        FILTER BULAN & TAHUN
-        =========================================
-        */
 
         if ($period) {
             $year = date('Y', strtotime($period));
@@ -38,46 +26,23 @@ class WeeklyReportController extends Controller
         }
 
         $user = Auth::user();
-
-        /*
-        =========================================
-        QUERY DASAR
-        =========================================
-        */
-
         $query = WeeklyReport::where('month', $month)
             ->where('year', $year);
-
-        /*
-        =========================================
-        OWNER → BISA FILTER DEPARTEMEN
-        USER LAIN → HANYA MILIK SENDIRI
-        =========================================
-        */
 
         if ($user->role == 'owner') {
 
             if ($department) {
                 $query->where('department', $department);
             }
-
         } else {
 
             $query->where('created_by', $user->name);
         }
-
-        /*
-        =========================================
-        GET DATA
-        =========================================
-        */
-
         $weekReports = $query
             ->orderBy('week', 'asc')
             ->get();
 
         $reports = $weekReports->groupBy('week');
-
         return view(
             'weekly-report',
             compact(
@@ -113,16 +78,10 @@ class WeeklyReportController extends Controller
             ->store('weekly_reports', 'public');
     }
 
-    /*
-    =========================================
-    AUTO AMBIL USER LOGIN
-    =========================================
-    */
-
     $user = Auth::user();
 
-    $createdBy = $user->name; // atau $user->name
-    $department = ucfirst($user->role); // marketing → Marketing
+    $createdBy = $user->name; 
+    $department = ucfirst($user->role); 
 
     WeeklyReport::create([
         'department' => $department,

@@ -15,7 +15,7 @@ class BookingCalendarController extends Controller
 public function calendarEvents()
 {
     $orders = Order::with('customer')
-        ->whereNotIn('status', ['pending approval', 'completed','processed']) // 🔥 FILTER
+        ->whereNotIn('status', ['pending approval', 'completed','processed'])
         ->get();
 
     $events = [];
@@ -27,22 +27,14 @@ public function calendarEvents()
                     ? Carbon::parse($order->return_date)
                     : $start;
 
-        // =========================
-        // 📦 MAIN EVENT (SEWA)
-        // =========================
         $events[] = [
             'title' => '#' . $order->id . ' ' . $order->event,
             'start' => $start->toDateString(),
             'end'   => $end->toDateString(),
-            'allDay'=> true, // 🔥 WAJIB
+            'allDay'=> true,
             'id'    => $order->id,
             'color' => '#d51500'
         ];
-
-        // =========================
-        // 🚚 PICKUP (H-1)
-        // =========================
-        // Pickup
         $events[] = [
             'title' => 'Pickup #' . $order->id,
             'start' => $start->copy()->subDay()->toDateString(),
@@ -50,11 +42,9 @@ public function calendarEvents()
             'id'    => $order->id,
             'color' => '#E69F00'
         ];
-
-        // Return
         $events[] = [
             'title' => 'Return #' . $order->id,
-            'start' => $end->toDateString(), // 🔥 BUKAN addDay()
+            'start' => $end->toDateString(), 
             'allDay'=> true,
             'id'    => $order->id,
             'color' => '#0072B2'

@@ -13,12 +13,6 @@ use Illuminate\Support\Facades\Storage;
 
 class StorageReservationController extends Controller
 {
-    /*
-    =====================================
-    RESERVATION LIST
-    =====================================
-    */
-
     public function index(Request $request)
 {
     if (!Auth::check()) {
@@ -32,12 +26,6 @@ class StorageReservationController extends Controller
         'details'
     ])
     ->when($status == 'processed', function ($query) {
-        /*
-        =====================================
-        TAB NEW STORAGE
-        Hanya order processed yang sudah DP / lunas
-        =====================================
-        */
         $query->where('status', 'processed')
               ->whereIn('payment_status', ['dp paid', 'fully paid']);
     })
@@ -54,19 +42,9 @@ class StorageReservationController extends Controller
     );
 }
 
-    /*
-    =====================================
-    AMBIL UNIT AVAILABLE BERDASARKAN TANGGAL
-    =====================================
-    */
-
     private function getAvailableUnitsByDate($kategori, $pickupDate, $returnDate)
     {
-        /*
-        Ambil kode unit yang sudah dipakai oleh order lain
-        pada rentang tanggal pickup - return.
-        Jika jadwalnya overlap, unit dianggap tidak tersedia.
-        */
+ 
         $busyUnitCodes = DB::table('order_details')
             ->join('orders', 'order_details.order_id', '=', 'orders.id')
             ->whereNotNull('order_details.kode_unit')
@@ -118,11 +96,6 @@ class StorageReservationController extends Controller
         $returnDate = $eventDate->copy()->addDay()->format('Y-m-d');
 
         foreach ($order->details as $detail) {
-
-            /*
-            Ambil unit berdasarkan ketersediaan tanggal,
-            bukan berdasarkan status available hari ini.
-            */
             $availableUnits = $this->getAvailableUnitsByDate(
                 $detail->product_type,
                 $pickupDate,
@@ -135,21 +108,7 @@ class StorageReservationController extends Controller
                     'Unit tidak cukup untuk ' . $detail->product_type . ' pada tanggal tersebut'
                 );
             }
-
-            /*
-            =====================================
-            HAPUS ROW LAMA
-            =====================================
-            */
-
             $detail->delete();
-
-            /*
-            =====================================
-            INSERT PER UNIT
-            =====================================
-            */
-
             foreach ($availableUnits as $unit) {
 
                 \App\Models\OrderDetail::create([
@@ -447,12 +406,6 @@ class StorageReservationController extends Controller
     ]);
 
     $order = Order::with('details')->findOrFail($id);
-
-    /*
-    =====================================
-    SIMPAN FOTO PICKUP
-    =====================================
-    */
 
     $pickupPhotoPath = $request->file('pickup_photo')
         ->store('proofs/pickup', 'public');

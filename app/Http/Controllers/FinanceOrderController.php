@@ -12,12 +12,6 @@ use Carbon\Carbon;
 
 class FinanceOrderController extends Controller
 {
-    /*
-    =====================================
-    FINANCE DASHBOARD
-    =====================================
-    */
-
     public function dashboard()
     {
         if (!Auth::check()) {
@@ -77,12 +71,6 @@ class FinanceOrderController extends Controller
         ));
     }
 
-    /*
-    =====================================
-    HALAMAN ORDER FINANCE
-    =====================================
-    */
-
     public function index(Request $request)
     {
         if (!Auth::check()) {
@@ -104,12 +92,6 @@ class FinanceOrderController extends Controller
 
         return view('finance.orders', compact('orders', 'paymentStatus'));
     }
-
-    /*
-    =====================================
-    MARK DP PAID + GENERATE INVOICE DP
-    =====================================
-    */
 
     public function markDpPaid(Request $request, $id)
     {
@@ -140,12 +122,6 @@ class FinanceOrderController extends Controller
         }
 
         $remainingAmount = max($finalPrice - $dpAmount, 0);
-
-        /*
-        =====================================
-        UPDATE DATA PEMBAYARAN DP
-        =====================================
-        */
 
         $order->update([
             'payment_status' => $remainingAmount <= 0 ? 'fully paid' : 'dp paid',

@@ -15,11 +15,6 @@ use Carbon\Carbon;
 
 class MarketingOrderController extends Controller
 {
-    /*
-    =========================================
-    HALAMAN ORDER MANAGEMENT
-    =========================================
-    */
     public function dashboard() {
         if (!Auth::check()) {
             return redirect('/')->with('error', 'Silakan login terlebih dahulu!');
@@ -39,7 +34,6 @@ class MarketingOrderController extends Controller
         $query = Order::with(['customer','details'])->latest();
 
         if ($status == 'all') {
-            // ambil semua
         } elseif ($status == 'processed') {
             $query->whereIn('status', [
                 'processed',
@@ -228,11 +222,6 @@ class MarketingOrderController extends Controller
 
     $dateChanged = $oldStartDate != $newStartDateString || $oldEndDate != $newEndDateString;
 
-    /*
-    =========================================
-    CEK AVAILABILITY JIKA TANGGAL BERUBAH
-    =========================================
-    */
     if ($dateChanged) {
         $requestedPickupDate = $newStartDate->copy()->subDay();
         $requestedReturnDate = $newEndDate->copy()->addDay();
@@ -399,11 +388,6 @@ class MarketingOrderController extends Controller
             ->with('success', 'Order berhasil diproses');
     }
 
-    /*
-    =========================================
-    CANCEL ORDER
-    =========================================
-    */
     public function cancel($id)
     {
         $order = Order::findOrFail($id);
@@ -423,11 +407,6 @@ class MarketingOrderController extends Controller
             ->with('success', 'Order berhasil dibatalkan');
     }
 
-    /*
-    =========================================
-    GENERATE INVOICE
-    =========================================
-    */
     public function generateInvoice(Request $request, $id)
     {
         $request->validate([

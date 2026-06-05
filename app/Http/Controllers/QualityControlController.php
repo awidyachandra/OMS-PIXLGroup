@@ -12,7 +12,6 @@ use Carbon\Carbon;
 
 class QualityControlController extends Controller
 {
-    // DASHBOARD
     public function index(Request $request)
     {
         if ($request->period) {
@@ -38,7 +37,6 @@ class QualityControlController extends Controller
         return view('storage.qc-dashboard', compact('qc', 'month', 'year'));
     }
 
-    // PENDING QC
     public function pending()
     {
         $orders = Order::with(['customer', 'details'])
@@ -49,7 +47,6 @@ class QualityControlController extends Controller
         return view('storage.qc-pending', compact('orders'));
     }
 
-    // INPUT QC
     public function input($id)
     {
         $order = Order::with('details.unit')->findOrFail($id);
@@ -57,123 +54,98 @@ class QualityControlController extends Controller
         return view('storage.qc-input', compact('order'));
     }
 
-    // STORE QC PER ORDER
-    // STORE QC PER ORDER
-public function store(Request $request, $id)
-{
-    $order = Order::with('details')->findOrFail($id);
+    public function store(Request $request, $id)
+    {
+        $order = Order::with('details')->findOrFail($id);
 
-    $goodCount = 0;
-    $badCount = 0;
-    $lostCount = 0;
-    $units = [];
-    $replacementLogs = [];
+        $goodCount = 0;
+        $badCount = 0;
+        $lostCount = 0;
+        $units = [];
+        $replacementLogs = [];
 
-    foreach ($order->details as $detail) {
+        foreach ($order->details as $detail) {
 
-        $kodeUnit = $detail->kode_unit;
+            $kodeUnit = $detail->kode_unit;
 
-        $unit = Unit::where('kode_unit', $kodeUnit)->first();
+            $unit = Unit::where('kode_unit', $kodeUnit)->first();
 
-        $data = $request->units[$kodeUnit] ?? [];
-
-        /*
-        =========================
-        STATUS QC
-        Default ON jika tidak ada input
-        =========================
-        */
-
-        $qcStatus = $data['status'] ?? 'on';
-
-        $on = $qcStatus == 'on';
-        $off = $qcStatus == 'off';
-        $lost = $qcStatus == 'lost';
-
-        /*
-        =========================
-        LOGIKA QC
-        ON     = available / Good
-        OFF    = maintenance / Need Maintenance
-        HILANG = unit dihapus dari data unit
-        =========================
-        */
-
-        if ($on) {
-            $result = 'Good';
-            $status = 'available';
-            $goodCount++;
-        } elseif ($off) {
-            $result = 'Need Maintenance';
-            $status = 'maintenance';
-            $badCount++;
-        } else {
-            $result = 'Lost';
-            $status = 'lost';
-            $lostCount++;
-        }
-
-        $units[] = $kodeUnit;
-
-        $note = $request->notes[$kodeUnit] ?? null;
-
-        /*
-        =========================
-        SIMPAN QC TERLEBIH DAHULU
-        product_name disimpan agar tetap tampil di dashboard
-        meskipun unit dihapus karena hilang
-        =========================
-        */
-
-        QualityControl::create([
-            'order_id' => $order->id,
-            'kode_unit' => $kodeUnit,
-            'product_name' => $unit->nama_unit ?? $detail->product_type,
-            'qc_type' => 'order',
-            'on' => $on,
-            'off' => $off,
-            'lost' => $lost,
-            'clear' => false,
-            'result' => $result,
-            'notes' => $note,
-            'qc_date' => now()
-        ]);
-
-        /*
-        =========================
-        UPDATE / HAPUS UNIT HASIL QC
-        =========================
-        */
-
-        if ($lost) {
+            $data = $request->units[$kodeUnit] ?? [];
 
             /*
-            Jika unit hilang dan masih dipakai order berikutnya,
-            sistem tetap mencoba mengganti dengan backup terlebih dahulu.
+            =========================
+            STATUS QC
+            Default ON jika tidak ada input
+            =========================
             */
-            $replacementResult = $this->replaceBrokenUnitForUpcomingOrders($kodeUnit, $order);
 
-            if (!empty($replacementResult)) {
-                foreach ($replacementResult as $log) {
-                    $replacementLogs[] = $log;
-                }
+            $qcStatus = $data['status'] ?? 'on';
+
+            $on = $qcStatus == 'on';
+            $off = $qcStatus == 'off';
+            $lost = $qcStatus == 'lost';
+
+            /*
+            =========================
+            LOGIKA QC
+            ON     = available / Good
+            OFF    = maintenance / Need Maintenance
+            HILANG = unit dihapus dari data unit
+            =========================
+            */
+
+            if ($on) {
+                $result = 'Good';
+                $status = 'available';
+                $goodCount++;
+            } elseif ($off) {
+                $result = 'Need Maintenance';
+                $status = 'maintenance';
+                $badCount++;
+            } else {
+                $result = 'Lost';
+                $status = 'lost';
+                $lostCount++;
             }
 
-            /*
-            Hapus data unit dari tabel units.
-            */
-            Unit::where('kode_unit', $kodeUnit)->delete();
+            $units[] = $kodeUnit;
 
-        } else {
-
-            Unit::where('kode_unit', $kodeUnit)
-                ->update(['status' => $status]);
+            $note = $request->notes[$kodeUnit] ?? null;
 
             /*
-            AUTO REPLACEMENT BACKUP
-            Jika unit OFF / maintenance, cek order berikutnya
+            =========================
+            SIMPAN QC TERLEBIH DAHULU
+            product_name disimpan agar tetap tampil di dashboard
+            meskipun unit dihapus karena hilang
+            =========================
             */
-            if ($off) {
+
+            QualityControl::create([
+                'order_id' => $order->id,
+                'kode_unit' => $kodeUnit,
+                'product_name' => $unit->nama_unit ?? $detail->product_type,
+                'qc_type' => 'order',
+                'on' => $on,
+                'off' => $off,
+                'lost' => $lost,
+                'clear' => false,
+                'result' => $result,
+                'notes' => $note,
+                'qc_date' => now()
+            ]);
+
+            /*
+            =========================
+            UPDATE / HAPUS UNIT HASIL QC
+            =========================
+            */
+
+            if ($lost) {
+
+                /*
+                Jika unit hilang dan masih dipakai order berikutnya,
+                sistem tetap mencoba mengganti dengan backup terlebih dahulu.
+                */
                 $replacementResult = $this->replaceBrokenUnitForUpcomingOrders($kodeUnit, $order);
 
                 if (!empty($replacementResult)) {
@@ -181,66 +153,89 @@ public function store(Request $request, $id)
                         $replacementLogs[] = $log;
                     }
                 }
+
+                /*
+                Hapus data unit dari tabel units.
+                */
+                Unit::where('kode_unit', $kodeUnit)->delete();
+
+            } else {
+
+                Unit::where('kode_unit', $kodeUnit)
+                    ->update(['status' => $status]);
+
+                /*
+                AUTO REPLACEMENT BACKUP
+                Jika unit OFF / maintenance, cek order berikutnya
+                */
+                if ($off) {
+                    $replacementResult = $this->replaceBrokenUnitForUpcomingOrders($kodeUnit, $order);
+
+                    if (!empty($replacementResult)) {
+                        foreach ($replacementResult as $log) {
+                            $replacementLogs[] = $log;
+                        }
+                    }
+                }
             }
         }
+
+        /*
+        =========================
+        UPDATE ORDER
+        =========================
+        */
+
+        $order->update([
+            'status' => 'completed'
+        ]);
+
+        /*
+        =========================
+        LOG QC
+        =========================
+        */
+
+        $context = 'Total: ' . count($units) .
+            ' unit | Good: ' . $goodCount .
+            ', Maintenance: ' . $badCount .
+            ', Hilang: ' . $lostCount .
+            ' → ' . implode(', ', $units);
+
+        if (!empty($replacementLogs)) {
+            $context .= "\n\nAuto Replacement:\n" . implode("\n", $replacementLogs);
+        }
+
+        LogHelper::add(
+            'info',
+            'Quality Control Order (#' . $order->id . ')',
+            $context
+        );
+
+        /*
+        =========================
+        REDIRECT + POPUP DATA
+        =========================
+        Jika ada replacement backup, kirim data ke session
+        agar bisa ditampilkan sebagai popup di dashboard QC.
+        =========================
+        */
+
+        $redirect = redirect('/storage/quality-control')
+            ->with('success', 'QC selesai');
+
+        if (!empty($replacementLogs)) {
+            $redirect->with('replacementLogs', $replacementLogs);
+        }
+
+        return $redirect;
     }
 
-    /*
-    =========================
-    UPDATE ORDER
-    =========================
-    */
-
-    $order->update([
-        'status' => 'completed'
-    ]);
-
-    /*
-    =========================
-    LOG QC
-    =========================
-    */
-
-    $context = 'Total: ' . count($units) .
-        ' unit | Good: ' . $goodCount .
-        ', Maintenance: ' . $badCount .
-        ', Hilang: ' . $lostCount .
-        ' → ' . implode(', ', $units);
-
-    if (!empty($replacementLogs)) {
-        $context .= "\n\nAuto Replacement:\n" . implode("\n", $replacementLogs);
-    }
-
-    LogHelper::add(
-        'info',
-        'Quality Control Order (#' . $order->id . ')',
-        $context
-    );
-
-    /*
-    =========================
-    REDIRECT + POPUP DATA
-    =========================
-    Jika ada replacement backup, kirim data ke session
-    agar bisa ditampilkan sebagai popup di dashboard QC.
-    =========================
-    */
-
-    $redirect = redirect('/storage/quality-control')
-        ->with('success', 'QC selesai');
-
-    if (!empty($replacementLogs)) {
-        $redirect->with('replacementLogs', $replacementLogs);
-    }
-
-    return $redirect;
-}
-
-    /*
-    =========================================
-    AUTO REPLACE UNIT RUSAK / HILANG KE BACKUP
-    =========================================
-    */
+        /*
+        =========================================
+        AUTO REPLACE UNIT RUSAK / HILANG KE BACKUP
+        =========================================
+        */
 
     private function replaceBrokenUnitForUpcomingOrders($brokenKodeUnit, $currentOrder)
 {
