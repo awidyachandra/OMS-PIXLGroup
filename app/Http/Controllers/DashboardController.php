@@ -333,10 +333,8 @@ $availableYears = Order::whereNotNull('date')
         return view('owner.dashboard', compact(
             'totalOrders',
             'pendingApproval',
-            'dpPaid',
             'processedOrders',
             'assignedOrders',
-            'fullyPaid',
             'onRentOrders',
             'returnCheckingOrders',
             'completed',
